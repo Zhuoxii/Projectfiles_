@@ -35,13 +35,13 @@ if __name__ == "__main__":
     data = "s3://comp5349-2022/train_separate_questions.json"
     df= spark.read.option('multiline', 'true').json(data)
 
-    spark.sparkContext.setLogLevel("ERROR")
+#     spark.sparkContext.setLogLevel("ERROR")
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--output", help="the output path",
-                            default='week8_out')
-    args = parser.parse_args()
-    output_path = args.output
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument("--output", help="the output path",
+#                             default='week8_out')
+#     args = parser.parse_args()
+#     output_path = args.output
 
     # Phase 1: Convert json format to DataFrame.
 
@@ -134,5 +134,5 @@ if __name__ == "__main__":
                 .cache()
 
     df_answer.show()
-    df_answer.write.csv(output_path)
+    df_answer.write.csv(result.csv)
     spark.stop()
