@@ -1,5 +1,5 @@
 spark-submit \
     --master yarn \
     --deploy-mode client \
-    MovieData_Summary.py \
+    word.py \
     --output $1
