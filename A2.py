@@ -131,5 +131,5 @@ df_answer = df.withColumn('answers2', explode('answers').alias('answers2'))\
             .cache()
             
 df_answer.show()
-df_answer.write.csv('output.json')
+df_answer.write.csv('output.csv')
 spark.stop()
