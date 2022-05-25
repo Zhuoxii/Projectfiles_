@@ -1,5 +1,5 @@
 spark-submit \
     --master yarn \
     --deploy-mode client \
-    word.py \
+    work.py \
     --output $1
