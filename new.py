@@ -39,6 +39,8 @@ output_path = args.output
 data = "s3://comp5349-2022/test.json"
 df= spark.read.option('multiline', 'true').json(data)
 
+
+
 df_title = df.select(explode("data.title").alias("title")).withColumn("index",f.monotonically_increasing_id())
 df_para = df.select(explode("data.paragraphs").alias("data")).withColumn("index",f.monotonically_increasing_id())
 
@@ -48,7 +50,7 @@ df = df_title.join(df_para,df_title.index==df_para.index).drop("index")\
          .select('title', 'context', 'qas', explode("qas").alias("qas2"))\
          .select('title', 'context', 'qas2', "qas2.question", "qas2.answers","qas2.is_impossible").cache()
 
-# df.show()
+df.show()
 
 def segmentToSequence(data):
   ls = []
@@ -139,11 +141,10 @@ rdd_possible_negative = rdd_type.filter(lambda x: x[6] == 'possible negative') .
 
 schema1 =  ['title', 'source', 'question', 'answer_start','answer_end','type']
 df_positive = rdd_positive.toDF(schema1).cache()
-df_positive  = spark.createDataFrame(rdd_positive,['context', 'source', 'question','text', 'answer_start','answer_end','type'])
+#df_positive  = spark.createDataFrame(rdd_positive,['context', 'source', 'question','text', 'answer_start','answer_end','type'])
 schema2 = ['title', 'source', 'question', 'answer_start','answer_end','type']
 df_possible_negative = rdd_possible_negative.toDF(schema2).cache()
-df_possible_negative.show()
-df_positive.show()
+
 """# Balance negative and positive samples"""
 
 #对于每个contract每个question有多少sample
@@ -151,7 +152,7 @@ df_positive.show()
 # df_1 = df_positive.groupBy('question').count().withColumnRenamed('count', 'extract_length')
 # df_1.show()
 
-# df_1 = df_positive.groupBy('question').count().withColumnRenamed('count','question_count')
+df_1 = df_positive.groupBy('question').count().withColumnRenamed('count','question_count')
 df_3 = df_positive.groupBy('question').agg(f.countDistinct('title')).withColumnRenamed('count(title)','other_contract_count')
 df_4 = df_1.join(df_3, 'question','inner')
 df_1 = df_4.withColumn('extract_length',f.round(f.col('question_count')/f.col('other_contract_count'),0).astype('int'))
@@ -171,13 +172,13 @@ df_3 = df_3.withColumn('cusum_lag_extract_length', f.sum(f.col('lag_extract_leng
           .withColumn('extract_start', f.col('cusum_lag_extract_length')+1)\
           .drop('lag_extract_length', 'cusum_lag_extract_length')\
           .select('title','question','source_list','extract_start','extract_length','seq_len')
-df_3.show()
+#df_3.show()
 
 def new_extract(extract_start, extract_length, seq_len):
   if extract_start <= seq_len and extract_start + extract_length <= seq_len + 1 :
     extract_start2 = extract_start
     extract_length2 = extract_length
-
+  
   elif extract_start <= seq_len and extract_start + extract_length > seq_len + 1:
     extract_start2 = extract_start
     extract_length2 = seq_len - extract_start + 1
@@ -185,7 +186,7 @@ def new_extract(extract_start, extract_length, seq_len):
   elif extract_start > seq_len and extract_length <= seq_len:
     extract_start2 = 1
     extract_length2 = extract_length
-
+  
   else:
     extract_start2 = 1
     extract_length2 = seq_len
@@ -194,7 +195,9 @@ def new_extract(extract_start, extract_length, seq_len):
 udf4 = udf(new_extract, ArrayType(IntegerType()))  
 df_4 = df_3.withColumn('extract_start',udf4(f.col('extract_start'), f.col('extract_length'),f.col('seq_len'))[0])\
            .withColumn('extract_length',udf4(f.col('extract_start'), f.col('extract_length'),f.col('seq_len'))[1])
-df_4.show()
+df_4 = df_4.filter(f.col('extract_length') >= 1)
+df_4  = df_4.filter(f.col('seq_len') >=1)
+# df_4.show()
 
 impossible_negative = df_4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))
 # impossible_negative = impossible_negative.filter(f.size('extract_source') >= 1)
@@ -202,7 +205,7 @@ impossible_negative =  impossible_negative.withColumn('source', explode(f.col('e
                                   .withColumn('answer_start', lit(0))\
                                   .withColumn('answer_end', lit(0))\
                                   .select('source', 'question', 'answer_start', 'answer_end')
-# impossible_negative.show()
+impossible_negative.show()
 
 """## 平衡 possible negative and postive"""
 
@@ -221,12 +224,15 @@ df3 = df2.groupBy('title','question','extract_length').agg(f.collect_set('source
 df4 = df3.withColumn('extract_start',udf4('extract_start', 'extract_length','seq_len')[0])\
            .withColumn('extract_length',udf4('extract_start', 'extract_length','seq_len')[1])
 
+df4 = df4.filter(f.col('extract_length') >= 1)
+df4  = df4.filter(f.col('seq_len') >=1)
+
 possible_negative = df4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))
 possible_negative = possible_negative.withColumn('source', explode('extract_source'))\
                                   .withColumn('answer_start', lit(0))\
                                   .withColumn('answer_end', lit(0))\
                                   .select('source', 'question', 'answer_start', 'answer_end')
-# possible_negative.show()
+possible_negative.show()
 
 print("successfully!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
