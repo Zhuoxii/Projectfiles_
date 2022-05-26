@@ -162,16 +162,16 @@ df_1 = df_positive.groupBy('question').count().withColumnRenamed('count', 'extra
 ## 把postive的question和impossible negative的question join
 df_2 =  df_1.join(df_impossible_negative, 'question', 'inner').orderBy( 'context','question','source')
 
-window1 = Window.partitionBy("context").orderBy('context','question')
-df_3 = df_2.groupBy('context','question','extract_length').agg(f.collect_set('source').alias('source_list')).orderBy('context','question')\
-          .withColumn('seq_len', f.size('source_list'))\
-          .withColumn('lag_extract_length', f.lag(f.col('extract_length')).over(window1))\
-          .fillna(0)\
-          .withColumn('cusum_lag_extract_length', f.sum(f.col('lag_extract_length')).over(window1))\
-          .withColumn('extract_start', f.col('cusum_lag_extract_length')+1)\
-          .drop('lag_extract_length', 'cusum_lag_extract_length')\
-          .select('context','question','source_list','extract_start','extract_length','seq_len')
-df_3.show()
+# window1 = Window.partitionBy("context").orderBy('context','question')
+# df_3 = df_2.groupBy('context','question','extract_length').agg(f.collect_set('source').alias('source_list')).orderBy('context','question')\
+#           .withColumn('seq_len', f.size('source_list'))\
+#           .withColumn('lag_extract_length', f.lag(f.col('extract_length')).over(window1))\
+#           .fillna(0)\
+#           .withColumn('cusum_lag_extract_length', f.sum(f.col('lag_extract_length')).over(window1))\
+#           .withColumn('extract_start', f.col('cusum_lag_extract_length')+1)\
+#           .drop('lag_extract_length', 'cusum_lag_extract_length')\
+#           .select('context','question','source_list','extract_start','extract_length','seq_len')
+df_2.show()
 # def new_extract(extract_start, extract_length, seq_len):
 #   if extract_start <= seq_len and extract_start + extract_length <= seq_len + 1:
 #     extract_start2 = extract_start
@@ -208,15 +208,15 @@ df_3.show()
 df1 = df_positive.groupBy('context', 'question').count().withColumnRenamed('count','extract_length')
 
 df2 = df_possible_negative.join(df1, ['context','question'], 'inner')
-df3 = df2.groupBy('context','question','extract_length').agg(f.collect_set('source').alias('source_list')).orderBy('context','question')\
-          .withColumn('seq_len', f.size('source_list'))\
-          .withColumn('lag_extract_length', f.lag(f.col('extract_length')).over(window1))\
-          .fillna(0)\
-          .withColumn('cusum_lag_extract_length', f.sum(f.col('lag_extract_length')).over(window1))\
-          .withColumn('extract_start', f.col('cusum_lag_extract_length')+1)\
-          .drop('lag_extract_length', 'cusum_lag_extract_length')\
-          .select('context','question','source_list','extract_start','extract_length','seq_len')
-df3.show()
+# df3 = df2.groupBy('context','question','extract_length').agg(f.collect_set('source').alias('source_list')).orderBy('context','question')\
+#           .withColumn('seq_len', f.size('source_list'))\
+#           .withColumn('lag_extract_length', f.lag(f.col('extract_length')).over(window1))\
+#           .fillna(0)\
+#           .withColumn('cusum_lag_extract_length', f.sum(f.col('lag_extract_length')).over(window1))\
+#           .withColumn('extract_start', f.col('cusum_lag_extract_length')+1)\
+#           .drop('lag_extract_length', 'cusum_lag_extract_length')\
+#           .select('context','question','source_list','extract_start','extract_length','seq_len')
+df2.show()
 # df4 = df3.withColumn('extract_start',udf4('extract_start', 'extract_length','seq_len')[0])\
 #            .withColumn('extract_length',udf4('extract_start', 'extract_length','seq_len')[1])
 # df4.show()
