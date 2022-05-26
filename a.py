@@ -137,12 +137,10 @@ df_positive.show()
 df_positive_distinct = df_positive.select('source').distinct()
 
 df2_possible_negative = df_possible_negative.join(df_positive_distinct, ['source'], 'leftanti').select('context','source','question','answer_start','answer_end','type')
-df2_possible_negative.show(10)
 
 """## 去掉impossible negative和positive重复的部分"""
 
 df2_impossible_negative = df_impossible_negative.join(df_positive_distinct, ['source'], 'leftanti').select('context','source','question','answer_start','answer_end','type')
-df2_impossible_negative.show()
 
 """## 平衡 impossible negative and positive
 
@@ -157,11 +155,14 @@ For an impossible question in a contract, the number of impossible negative samp
 
 # #对于每个contract每个question有多少sample
 # ##对于positive而言
-# df_1 = df_positive.groupBy('question').count().withColumnRenamed('count', 'extract_length')
+df_1 = df_positive.groupBy('question').count().withColumnRenamed('count','question_count')
+df_3= df_positive.groupBy('question').agg(f.countDistinct('context')).withColumnRenamed('count(context)','other_contract_count')
+df_4 = df_1.join(df_3, 'question','inner')
+df_1 = df_4.withColumn('num_sampling',f.round(f.col('question_count')/f.col('other_contract_count'),0))
 
 # ## 把postive的question和impossible negative的question join
-# df_2 =  df_1.join(df_impossible_negative, 'question', 'inner').orderBy( 'context','question','source')
-
+df_2 =  df_1.join(df_impossible_negative, 'question', 'inner').orderBy( 'context','question','source')
+df_2.show()
 # # window1 = Window.partitionBy("context").orderBy('context','question')
 # # df_3 = df_2.groupBy('context','question','extract_length').agg(f.collect_set('source').alias('source_list')).orderBy('context','question')\
 # #           .withColumn('seq_len', f.size('source_list'))\
@@ -171,7 +172,7 @@ For an impossible question in a contract, the number of impossible negative samp
 # #           .withColumn('extract_start', f.col('cusum_lag_extract_length')+1)\
 # #           .drop('lag_extract_length', 'cusum_lag_extract_length')\
 # #           .select('context','question','source_list','extract_start','extract_length','seq_len')
-# df_2.show()
+
 # # def new_extract(extract_start, extract_length, seq_len):
 # #   if extract_start <= seq_len and extract_start + extract_length <= seq_len + 1:
 # #     extract_start2 = extract_start
