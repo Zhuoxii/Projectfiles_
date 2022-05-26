@@ -202,17 +202,17 @@ df_4 = df_3.withColumn('extract_start',udf4(f.col('extract_start'), f.col('extra
            .withColumn('extract_length',udf4(f.col('extract_start'), f.col('extract_length'),f.col('seq_len'))[1])
 df_4 = df_4.filter(f.col('extract_length') >= 1)
 df_4  = df_4.filter(f.col('seq_len') >=1)
-# df_4.show()
+df_4.show()
 
-impossible_negative = df_4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))
-# impossible_negative = impossible_negative.filter(f.size('extract_source') >= 1)
-impossible_negative =  impossible_negative.withColumn('source', explode(f.col('extract_source')))\
-                                  .withColumn('answer_start', lit(0))\
-                                  .withColumn('answer_end', lit(0))\
-                                  .select('source', 'question', 'answer_start', 'answer_end')
-impossible_negative.show()
+# impossible_negative = df_4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))
+# # impossible_negative = impossible_negative.filter(f.size('extract_source') >= 1)
+# impossible_negative =  impossible_negative.withColumn('source', explode(f.col('extract_source')))\
+#                                   .withColumn('answer_start', lit(0))\
+#                                   .withColumn('answer_end', lit(0))\
+#                                   .select('source', 'question', 'answer_start', 'answer_end')
+# impossible_negative.show()
 
-"""## 平衡 possible negative and postive"""
+# """## 平衡 possible negative and postive"""
 
 df1 = df_positive.groupBy('title', 'question').count().withColumnRenamed('count','extract_length')
 
@@ -232,26 +232,26 @@ df4 = df3.withColumn('extract_start',udf4('extract_start', 'extract_length','seq
 df4 = df4.filter(f.col('extract_length') >= 1)
 df4  = df4.filter(f.col('seq_len') >=1)
 
-possible_negative = df4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))
-possible_negative = possible_negative.withColumn('source', explode('extract_source'))\
-                                  .withColumn('answer_start', lit(0))\
-                                  .withColumn('answer_end', lit(0))\
-                                  .select('source', 'question', 'answer_start', 'answer_end')
-possible_negative.show()
+# possible_negative = df4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))
+# possible_negative = possible_negative.withColumn('source', explode('extract_source'))\
+#                                   .withColumn('answer_start', lit(0))\
+#                                   .withColumn('answer_end', lit(0))\
+#                                   .select('source', 'question', 'answer_start', 'answer_end')
+# possible_negative.show()
 
 print("successfully!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
 """# 结果合并"""
 
-positive = df_positive.select('source', 'question', 'answer_start','answer_end')
-df_all = positive.union(impossible_negative).union(possible_negative)
-# df_all.show()
+# positive = df_positive.select('source', 'question', 'answer_start','answer_end')
+# df_all = positive.union(impossible_negative).union(possible_negative)
+# # df_all.show()
 
-import json
-result = df_all.toJSON().collect()
-output = json.dumps(result, indent = 2)
-with open('result.json','w') as f:
-  json.dump(output, f)
+# import json
+# result = df_all.toJSON().collect()
+# output = json.dumps(result, indent = 2)
+# with open('result.json','w') as f:
+#   json.dump(output, f)
 
 spark.stop()
 
