@@ -137,12 +137,12 @@ df_positive.show()
 df_positive_distinct = df_positive.select('source').distinct()
 
 df2_possible_negative = df_possible_negative.join(df_positive_distinct, ['source'], 'leftanti').select('context','source','question','answer_start','answer_end','type')
-# df2_possible_negative.show(10)
+df2_possible_negative.show(10)
 
 """## 去掉impossible negative和positive重复的部分"""
 
 df2_impossible_negative = df_impossible_negative.join(df_positive_distinct, ['source'], 'leftanti').select('context','source','question','answer_start','answer_end','type')
-# df2_impossible_negative.show()
+df2_impossible_negative.show()
 
 """## 平衡 impossible negative and positive
 
@@ -153,79 +153,79 @@ For an impossible question in a contract, the number of impossible negative samp
 - 思路是: 分子和分母都通过join方式到impossible negative生成新的两列 --
 """
 
-df_impossible_negative_extract = df_impossible_negative.select('question').distinct()
+# df_impossible_negative_extract = df_impossible_negative.select('question').distinct()
 
-#对于每个contract每个question有多少sample
-##对于positive而言
-df_1 = df_positive.groupBy('question').count().withColumnRenamed('count', 'extract_length')
+# #对于每个contract每个question有多少sample
+# ##对于positive而言
+# df_1 = df_positive.groupBy('question').count().withColumnRenamed('count', 'extract_length')
 
-## 把postive的question和impossible negative的question join
-df_2 =  df_1.join(df_impossible_negative, 'question', 'inner').orderBy( 'context','question','source')
+# ## 把postive的question和impossible negative的question join
+# df_2 =  df_1.join(df_impossible_negative, 'question', 'inner').orderBy( 'context','question','source')
 
-# window1 = Window.partitionBy("context").orderBy('context','question')
-# df_3 = df_2.groupBy('context','question','extract_length').agg(f.collect_set('source').alias('source_list')).orderBy('context','question')\
-#           .withColumn('seq_len', f.size('source_list'))\
-#           .withColumn('lag_extract_length', f.lag(f.col('extract_length')).over(window1))\
-#           .fillna(0)\
-#           .withColumn('cusum_lag_extract_length', f.sum(f.col('lag_extract_length')).over(window1))\
-#           .withColumn('extract_start', f.col('cusum_lag_extract_length')+1)\
-#           .drop('lag_extract_length', 'cusum_lag_extract_length')\
-#           .select('context','question','source_list','extract_start','extract_length','seq_len')
-df_2.show()
-# def new_extract(extract_start, extract_length, seq_len):
-#   if extract_start <= seq_len and extract_start + extract_length <= seq_len + 1:
-#     extract_start2 = extract_start
-#     extract_length2 = extract_length
+# # window1 = Window.partitionBy("context").orderBy('context','question')
+# # df_3 = df_2.groupBy('context','question','extract_length').agg(f.collect_set('source').alias('source_list')).orderBy('context','question')\
+# #           .withColumn('seq_len', f.size('source_list'))\
+# #           .withColumn('lag_extract_length', f.lag(f.col('extract_length')).over(window1))\
+# #           .fillna(0)\
+# #           .withColumn('cusum_lag_extract_length', f.sum(f.col('lag_extract_length')).over(window1))\
+# #           .withColumn('extract_start', f.col('cusum_lag_extract_length')+1)\
+# #           .drop('lag_extract_length', 'cusum_lag_extract_length')\
+# #           .select('context','question','source_list','extract_start','extract_length','seq_len')
+# df_2.show()
+# # def new_extract(extract_start, extract_length, seq_len):
+# #   if extract_start <= seq_len and extract_start + extract_length <= seq_len + 1:
+# #     extract_start2 = extract_start
+# #     extract_length2 = extract_length
   
-#   elif extract_start <= seq_len and extract_start + extract_length > seq_len + 1:
-#     extract_start2 = extract_start
-#     extract_length2 = seq_len - extract_start + 1
+# #   elif extract_start <= seq_len and extract_start + extract_length > seq_len + 1:
+# #     extract_start2 = extract_start
+# #     extract_length2 = seq_len - extract_start + 1
 
-#   elif extract_start > seq_len and extract_length <= seq_len:
-#     extract_start2 = 1
-#     extract_length2 = extract_length
+# #   elif extract_start > seq_len and extract_length <= seq_len:
+# #     extract_start2 = 1
+# #     extract_length2 = extract_length
   
-#   else:
-#     extract_start2 = 1
-#     extract_length2 = seq_len
-#   return [extract_start2, extract_length2]
+# #   else:
+# #     extract_start2 = 1
+# #     extract_length2 = seq_len
+# #   return [extract_start2, extract_length2]
 
-# udf4 = udf(new_extract, ArrayType(IntegerType()))  
-# df_4 = df_3.withColumn('extract_start',udf4('extract_start', 'extract_length','seq_len')[0])\
-#            .withColumn('extract_length',udf4('extract_start', 'extract_length','seq_len')[1])
+# # udf4 = udf(new_extract, ArrayType(IntegerType()))  
+# # df_4 = df_3.withColumn('extract_start',udf4('extract_start', 'extract_length','seq_len')[0])\
+# #            .withColumn('extract_length',udf4('extract_start', 'extract_length','seq_len')[1])
 
-# df_4.show()
+# # df_4.show()
 
-# impossible_negative = df_4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))
-# impossible_negative =  impossible_negative.withColumn('source', explode(f.col('extract_source')))\
-#                                   .withColumn('answer_start', lit(0))\
-#                                   .withColumn('answer_end', lit(0))\
-#                                   .select('source', 'question', 'answer_start', 'answer_end')
-# impossible_negative.show()
+# # impossible_negative = df_4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))
+# # impossible_negative =  impossible_negative.withColumn('source', explode(f.col('extract_source')))\
+# #                                   .withColumn('answer_start', lit(0))\
+# #                                   .withColumn('answer_end', lit(0))\
+# #                                   .select('source', 'question', 'answer_start', 'answer_end')
+# # impossible_negative.show()
 
-"""## 平衡 possible negative and postive"""
+# """## 平衡 possible negative and postive"""
 
-df1 = df_positive.groupBy('context', 'question').count().withColumnRenamed('count','extract_length')
+# df1 = df_positive.groupBy('context', 'question').count().withColumnRenamed('count','extract_length')
 
-df2 = df_possible_negative.join(df1, ['context','question'], 'inner')
-# df3 = df2.groupBy('context','question','extract_length').agg(f.collect_set('source').alias('source_list')).orderBy('context','question')\
-#           .withColumn('seq_len', f.size('source_list'))\
-#           .withColumn('lag_extract_length', f.lag(f.col('extract_length')).over(window1))\
-#           .fillna(0)\
-#           .withColumn('cusum_lag_extract_length', f.sum(f.col('lag_extract_length')).over(window1))\
-#           .withColumn('extract_start', f.col('cusum_lag_extract_length')+1)\
-#           .drop('lag_extract_length', 'cusum_lag_extract_length')\
-#           .select('context','question','source_list','extract_start','extract_length','seq_len')
-df2.show()
-# df4 = df3.withColumn('extract_start',udf4('extract_start', 'extract_length','seq_len')[0])\
-#            .withColumn('extract_length',udf4('extract_start', 'extract_length','seq_len')[1])
-# df4.show()
-# possible_negative = df4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))
-# possible_negative = possible_negative.withColumn('source', explode(f.col('extract_source')))\
-#                                   .withColumn('answer_start', lit(0))\
-#                                   .withColumn('answer_end', lit(0))\
-#                                   .select('source', 'question', 'answer_start', 'answer_end')
-# possible_negative.show()
+# df2 = df_possible_negative.join(df1, ['context','question'], 'inner')
+# # df3 = df2.groupBy('context','question','extract_length').agg(f.collect_set('source').alias('source_list')).orderBy('context','question')\
+# #           .withColumn('seq_len', f.size('source_list'))\
+# #           .withColumn('lag_extract_length', f.lag(f.col('extract_length')).over(window1))\
+# #           .fillna(0)\
+# #           .withColumn('cusum_lag_extract_length', f.sum(f.col('lag_extract_length')).over(window1))\
+# #           .withColumn('extract_start', f.col('cusum_lag_extract_length')+1)\
+# #           .drop('lag_extract_length', 'cusum_lag_extract_length')\
+# #           .select('context','question','source_list','extract_start','extract_length','seq_len')
+# df2.show()
+# # df4 = df3.withColumn('extract_start',udf4('extract_start', 'extract_length','seq_len')[0])\
+# #            .withColumn('extract_length',udf4('extract_start', 'extract_length','seq_len')[1])
+# # df4.show()
+# # possible_negative = df4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))
+# # possible_negative = possible_negative.withColumn('source', explode(f.col('extract_source')))\
+# #                                   .withColumn('answer_start', lit(0))\
+# #                                   .withColumn('answer_end', lit(0))\
+# #                                   .select('source', 'question', 'answer_start', 'answer_end')
+# # possible_negative.show()
 
 """# 结果合并"""
 
