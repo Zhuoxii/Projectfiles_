@@ -47,7 +47,7 @@ df_para = df.select(explode("data.paragraphs").alias("data")).withColumn("index"
 
 df = df_title.join(df_para,df_title.index==df_para.index).drop("index")
 
-df = df.head(5)
+df = df.head(50)
 df = spark.createDataFrame(df)
 df.show()
 
