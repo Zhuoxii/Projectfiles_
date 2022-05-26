@@ -195,8 +195,8 @@ df_4 = df_3.withColumn('extract_start',udf4('extract_start', 'extract_length','s
 
 # df_4.show()
 
-impossible_negative = df_4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))\
-                                  .withColumn('source', explode('extract_source'))\
+impossible_negative = df_4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))
+impossible_negative =  impossible_negative.withColumn('source', explode(f.col('extract_source')))\
                                   .withColumn('answer_start', lit(0))\
                                   .withColumn('answer_end', lit(0))\
                                   .select('source', 'question', 'answer_start', 'answer_end')
@@ -219,11 +219,12 @@ df3 = df2.groupBy('context','question','extract_length').agg(f.collect_set('sour
 df4 = df3.withColumn('extract_start',udf4('extract_start', 'extract_length','seq_len')[0])\
            .withColumn('extract_length',udf4('extract_start', 'extract_length','seq_len')[1])
 
-possible_negative = df4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))\
-                                  .withColumn('source', explode('extract_source'))\
+possible_negative = df4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))
+possible_negative = possible_negative.withColumn('source', explode(f.col('extract_source')))\
                                   .withColumn('answer_start', lit(0))\
                                   .withColumn('answer_end', lit(0))\
                                   .select('source', 'question', 'answer_start', 'answer_end')
+possible_negative.show()
 possible_negative.show()
 
 """# 结果合并"""
