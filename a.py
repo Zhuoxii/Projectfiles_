@@ -126,7 +126,8 @@ df_positive = rdd_positive.toDF(schema1)
 #df_positive  = spark.createDataFrame(rdd_positive,['context', 'source', 'question','text', 'answer_start','answer_end','type'])
 schema2 = ['context', 'source', 'question', 'answer_start','answer_end','type']
 df_possible_negative = rdd_possible_negative.toDF(schema2)
-
+df_possible_negative.show()
+df_positive.show()
 """# Balance negative and positive samples
 
 ##  去掉possible negative和positive重复的部分
@@ -193,14 +194,14 @@ udf4 = udf(new_extract, ArrayType(IntegerType()))
 df_4 = df_3.withColumn('extract_start',udf4('extract_start', 'extract_length','seq_len')[0])\
            .withColumn('extract_length',udf4('extract_start', 'extract_length','seq_len')[1])
 
-# df_4.show()
+df_4.show()
 
-impossible_negative = df_4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))
-impossible_negative =  impossible_negative.withColumn('source', explode(f.col('extract_source')))\
-                                  .withColumn('answer_start', lit(0))\
-                                  .withColumn('answer_end', lit(0))\
-                                  .select('source', 'question', 'answer_start', 'answer_end')
-impossible_negative.show()
+# impossible_negative = df_4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))
+# impossible_negative =  impossible_negative.withColumn('source', explode(f.col('extract_source')))\
+#                                   .withColumn('answer_start', lit(0))\
+#                                   .withColumn('answer_end', lit(0))\
+#                                   .select('source', 'question', 'answer_start', 'answer_end')
+# impossible_negative.show()
 
 """## 平衡 possible negative and postive"""
 
@@ -218,28 +219,27 @@ df3 = df2.groupBy('context','question','extract_length').agg(f.collect_set('sour
 
 df4 = df3.withColumn('extract_start',udf4('extract_start', 'extract_length','seq_len')[0])\
            .withColumn('extract_length',udf4('extract_start', 'extract_length','seq_len')[1])
-
-possible_negative = df4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))
-possible_negative = possible_negative.withColumn('source', explode(f.col('extract_source')))\
-                                  .withColumn('answer_start', lit(0))\
-                                  .withColumn('answer_end', lit(0))\
-                                  .select('source', 'question', 'answer_start', 'answer_end')
-possible_negative.show()
-possible_negative.show()
+df4.show()
+# possible_negative = df4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))
+# possible_negative = possible_negative.withColumn('source', explode(f.col('extract_source')))\
+#                                   .withColumn('answer_start', lit(0))\
+#                                   .withColumn('answer_end', lit(0))\
+#                                   .select('source', 'question', 'answer_start', 'answer_end')
+# possible_negative.show()
 
 """# 结果合并"""
 
-positive = df_positive.select('source', 'question', 'answer_start','answer_end')
-df_all = positive.union(impossible_negative).union(possible_negative)
-# df_all.show()
+# positive = df_positive.select('source', 'question', 'answer_start','answer_end')
+# df_all = positive.union(impossible_negative).union(possible_negative)
+# # df_all.show()
 
-# positive.repartition(1).write.mode('overwrite').json("output.jsonl")
+# # positive.repartition(1).write.mode('overwrite').json("output.jsonl")
 
-import json
-result = df_all.toJSON().collect()
-output = json.dumps(result, indent = 2)
-with open('result.json','w') as f:
-  json.dump(output, f)
+# import json
+# result = df_all.toJSON().collect()
+# output = json.dumps(result, indent = 2)
+# with open('result.json','w') as f:
+#   json.dump(output, f)
 
 # testing_df = df
 # testing_df.show(1)
