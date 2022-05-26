@@ -22,6 +22,12 @@ from pyspark.sql import SparkSession
 spark = SparkSession \
     .builder \
     .appName("Comp5349 Assignment2") \
+    .config("spark.executor.memory", "4g")\
+    .config("spark.driver.memory", "6g") \
+    .config("spark.executor.cores", "4") \
+    .config("spark.Num-executors", "50") \
+    .config("spark.sql.inMemoryColumnarStorage.compressed", "true")\
+    .config("spark.sql.execution.arrow.enabled", "true")\
     .getOrCreate()
 
 
