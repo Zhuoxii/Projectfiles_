@@ -2,5 +2,5 @@ spark-submit \
     --master yarn \
     --deploy-mode client \
     --num-executors  4 \
-    b.py \
+    new.py \
     --output $1
