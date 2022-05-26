@@ -13,10 +13,6 @@ from pyspark.sql.functions import count
 from pyspark.sql import SparkSession
 spark = SparkSession \
     .builder \
-    .config("spark.executor.memory", "6g") \
-    .config("spark.sql.inMemoryColumnarStorage.compressed", "true")\
-    .config("spark.sql.execution.arrow.enabled", "true")\
-    .config("spark.driver.memory", "6g") \
     .appName("Comp5349 Assignment2") \
     .getOrCreate()
 
