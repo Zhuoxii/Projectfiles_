@@ -153,25 +153,25 @@ For an impossible question in a contract, the number of impossible negative samp
 - 思路是: 分子和分母都通过join方式到impossible negative生成新的两列 --
 """
 
-# df_impossible_negative_extract = df_impossible_negative.select('question').distinct()
+df_impossible_negative_extract = df_impossible_negative.select('question').distinct()
 
 #对于每个contract每个question有多少sample
 ##对于positive而言
-# df_1 = df_positive.groupBy('question').count().withColumnRenamed('count', 'extract_length')
+df_1 = df_positive.groupBy('question').count().withColumnRenamed('count', 'extract_length')
 
-# ## 把postive的question和impossible negative的question join
-# df_2 =  df_1.join(df_impossible_negative, 'question', 'inner').orderBy( 'context','question','source')
+## 把postive的question和impossible negative的question join
+df_2 =  df_1.join(df_impossible_negative, 'question', 'inner').orderBy( 'context','question','source')
 
-# window1 = Window.partitionBy("context").orderBy('context','question')
-# df_3 = df_2.groupBy('context','question','extract_length').agg(f.collect_set('source').alias('source_list')).orderBy('context','question')\
-#           .withColumn('seq_len', f.size('source_list'))\
-#           .withColumn('lag_extract_length', f.lag(f.col('extract_length')).over(window1))\
-#           .fillna(0)\
-#           .withColumn('cusum_lag_extract_length', f.sum(f.col('lag_extract_length')).over(window1))\
-#           .withColumn('extract_start', f.col('cusum_lag_extract_length')+1)\
-#           .drop('lag_extract_length', 'cusum_lag_extract_length')\
-#           .select('context','question','source_list','extract_start','extract_length','seq_len')
-
+window1 = Window.partitionBy("context").orderBy('context','question')
+df_3 = df_2.groupBy('context','question','extract_length').agg(f.collect_set('source').alias('source_list')).orderBy('context','question')\
+          .withColumn('seq_len', f.size('source_list'))\
+          .withColumn('lag_extract_length', f.lag(f.col('extract_length')).over(window1))\
+          .fillna(0)\
+          .withColumn('cusum_lag_extract_length', f.sum(f.col('lag_extract_length')).over(window1))\
+          .withColumn('extract_start', f.col('cusum_lag_extract_length')+1)\
+          .drop('lag_extract_length', 'cusum_lag_extract_length')\
+          .select('context','question','source_list','extract_start','extract_length','seq_len')
+df_3.show()
 # def new_extract(extract_start, extract_length, seq_len):
 #   if extract_start <= seq_len and extract_start + extract_length <= seq_len + 1:
 #     extract_start2 = extract_start
@@ -205,18 +205,18 @@ For an impossible question in a contract, the number of impossible negative samp
 
 """## 平衡 possible negative and postive"""
 
-# df1 = df_positive.groupBy('context', 'question').count().withColumnRenamed('count','extract_length')
+df1 = df_positive.groupBy('context', 'question').count().withColumnRenamed('count','extract_length')
 
-# df2 = df_possible_negative.join(df1, ['context','question'], 'inner')
-# df3 = df2.groupBy('context','question','extract_length').agg(f.collect_set('source').alias('source_list')).orderBy('context','question')\
-#           .withColumn('seq_len', f.size('source_list'))\
-#           .withColumn('lag_extract_length', f.lag(f.col('extract_length')).over(window1))\
-#           .fillna(0)\
-#           .withColumn('cusum_lag_extract_length', f.sum(f.col('lag_extract_length')).over(window1))\
-#           .withColumn('extract_start', f.col('cusum_lag_extract_length')+1)\
-#           .drop('lag_extract_length', 'cusum_lag_extract_length')\
-#           .select('context','question','source_list','extract_start','extract_length','seq_len')
-
+df2 = df_possible_negative.join(df1, ['context','question'], 'inner')
+df3 = df2.groupBy('context','question','extract_length').agg(f.collect_set('source').alias('source_list')).orderBy('context','question')\
+          .withColumn('seq_len', f.size('source_list'))\
+          .withColumn('lag_extract_length', f.lag(f.col('extract_length')).over(window1))\
+          .fillna(0)\
+          .withColumn('cusum_lag_extract_length', f.sum(f.col('lag_extract_length')).over(window1))\
+          .withColumn('extract_start', f.col('cusum_lag_extract_length')+1)\
+          .drop('lag_extract_length', 'cusum_lag_extract_length')\
+          .select('context','question','source_list','extract_start','extract_length','seq_len')
+df3.show()
 # df4 = df3.withColumn('extract_start',udf4('extract_start', 'extract_length','seq_len')[0])\
 #            .withColumn('extract_length',udf4('extract_start', 'extract_length','seq_len')[1])
 # df4.show()
