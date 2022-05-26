@@ -44,13 +44,18 @@ df= spark.read.option('multiline', 'true').json(data)
 df_title = df.select(explode("data.title").alias("title")).withColumn("index",f.monotonically_increasing_id())
 df_para = df.select(explode("data.paragraphs").alias("data")).withColumn("index",f.monotonically_increasing_id())
 
-df = df_title.join(df_para,df_title.index==df_para.index).drop("index")\
-         .select('title','data',explode("data.context").alias("context"))\
-         .select('title','data', 'context', explode("data.qas").alias("qas"))\
-         .select('title', 'context', 'qas', explode("qas").alias("qas2"))\
-         .select('title', 'context', 'qas2', "qas2.question", "qas2.answers","qas2.is_impossible").cache()
 
+df = df_title.join(df_para,df_title.index==df_para.index).drop("index")
+
+df = df.head(5)
+df = spark.createDataFrame(df)
 df.show()
+
+df = df.select('title','data',explode("data.context").alias("context"))\
+      .select('title','data', 'context', explode("data.qas").alias("qas"))\
+      .select('title', 'context', 'qas', explode("qas").alias("qas2"))\
+      .select('title', 'context', 'qas2', "qas2.question", "qas2.answers","qas2.is_impossible").cache()
+
 
 def segmentToSequence(data):
   ls = []
