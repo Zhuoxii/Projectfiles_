@@ -219,9 +219,11 @@ def new_extract(extract_start, extract_length, seq_len):
 udf4 = udf(new_extract, ArrayType(IntegerType()))  
 df_4 = df_3.withColumn('extract_start',udf4(f.col('extract_start'), f.col('extract_length'),f.col('seq_len'))[0])\
            .withColumn('extract_length',udf4(f.col('extract_start'), f.col('extract_length'),f.col('seq_len'))[1])
+df_4 = df_4.filter( (df_4.seq_len >=2)  &  (df_4.extract_length >= 1))
 
 
 impossible_negative = df_4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))
+impossible_negative = impossible_negative.filter(f.size('extract_source') >= 1)
 impossible_negative =  impossible_negative.withColumn('source', explode(f.col('extract_source')))\
                                   .withColumn('answer_start', lit(0))\
                                   .withColumn('answer_end', lit(0))\
@@ -246,6 +248,7 @@ df4 = df3.withColumn('extract_start',udf4('extract_start', 'extract_length','seq
            .withColumn('extract_length',udf4('extract_start', 'extract_length','seq_len')[1])
 
 possible_negative = df4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))
+possible_negative = possible_negative.filter(f.size('extract_source') >= 1)
 possible_negative = possible_negative.withColumn('source', explode('extract_source'))\
                                   .withColumn('answer_start', lit(0))\
                                   .withColumn('answer_end', lit(0))\
