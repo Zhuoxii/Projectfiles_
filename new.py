@@ -154,9 +154,9 @@ df_possible_negative.show()
 """
 
 # # df_positive 去重
- df_positive_distinct = df_positive.select('source').distinct()
- df2_possible_negative = df_possible_negative.join(df_positive_distinct, ['source'], 'leftanti').select('context','source','question','answer_start','answer_end','type')
- 
+df_positive_distinct = df_positive.select('source').distinct()
+df2_possible_negative = df_possible_negative.join(df_positive_distinct, ['source'], 'leftanti').select('context','source','question','answer_start','answer_end','type')
+df_positive_distinct.show()
 # """## 去掉impossible negative和positive重复的部分"""
 
 df2_impossible_negative = df_impossible_negative.join(df_positive_distinct, ['source'], 'leftanti').select('context','source','question','answer_start','answer_end','type')
