@@ -142,7 +142,8 @@ df_positive = rdd_positive.toDF(schema1).cache()
 #df_positive  = spark.createDataFrame(rdd_positive,['context', 'source', 'question','text', 'answer_start','answer_end','type'])
 schema2 = ['title', 'source', 'question', 'answer_start','answer_end','type']
 df_possible_negative = rdd_possible_negative.toDF(schema2).cache()
-
+df_possible_negative.show()
+df_positive.show()
 """# Balance negative and positive samples"""
 
 #对于每个contract每个question有多少sample
@@ -150,27 +151,27 @@ df_possible_negative = rdd_possible_negative.toDF(schema2).cache()
 # df_1 = df_positive.groupBy('question').count().withColumnRenamed('count', 'extract_length')
 # df_1.show()
 
-df_1 = df_positive.groupBy('question').count().withColumnRenamed('count','question_count')
-df_3 = df_positive.groupBy('question').agg(f.countDistinct('title')).withColumnRenamed('count(title)','other_contract_count')
-df_4 = df_1.join(df_3, 'question','inner')
-df_1 = df_4.withColumn('extract_length',f.round(f.col('question_count')/f.col('other_contract_count'),0).astype('int'))
+# df_1 = df_positive.groupBy('question').count().withColumnRenamed('count','question_count')
+# df_3 = df_positive.groupBy('question').agg(f.countDistinct('title')).withColumnRenamed('count(title)','other_contract_count')
+# df_4 = df_1.join(df_3, 'question','inner')
+# df_1 = df_4.withColumn('extract_length',f.round(f.col('question_count')/f.col('other_contract_count'),0).astype('int'))
 
-## 把postive的question和impossible negative的question join
-df_2 =  df_1.join(df_impossible_negative, 'question', 'inner').orderBy('title','question','source')\
-          .select('title', 'question','source', 'answer_start', 'answer_end','extract_length','type')
+# ## 把postive的question和impossible negative的question join
+# df_2 =  df_1.join(df_impossible_negative, 'question', 'inner').orderBy('title','question','source')\
+#           .select('title', 'question','source', 'answer_start', 'answer_end','extract_length','type')
 
-# df_2.show()
+# # df_2.show()
 
-window1 = Window.partitionBy("title").orderBy('title','question')
-df_3 = df_2.groupBy('title','question','extract_length').agg(f.collect_set('source').alias('source_list')).orderBy('title','question')
-df_3 = df_3.withColumn('seq_len', f.size('source_list'))\
-          .withColumn('lag_extract_length', f.lag(f.col('extract_length')).over(window1))\
-          .fillna(0)
-df_3 = df_3.withColumn('cusum_lag_extract_length', f.sum(f.col('lag_extract_length')).over(window1))\
-          .withColumn('extract_start', f.col('cusum_lag_extract_length')+1)\
-          .drop('lag_extract_length', 'cusum_lag_extract_length')\
-          .select('title','question','source_list','extract_start','extract_length','seq_len')
-df_3.show()
+# window1 = Window.partitionBy("title").orderBy('title','question')
+# df_3 = df_2.groupBy('title','question','extract_length').agg(f.collect_set('source').alias('source_list')).orderBy('title','question')
+# df_3 = df_3.withColumn('seq_len', f.size('source_list'))\
+#           .withColumn('lag_extract_length', f.lag(f.col('extract_length')).over(window1))\
+#           .fillna(0)
+# df_3 = df_3.withColumn('cusum_lag_extract_length', f.sum(f.col('lag_extract_length')).over(window1))\
+#           .withColumn('extract_start', f.col('cusum_lag_extract_length')+1)\
+#           .drop('lag_extract_length', 'cusum_lag_extract_length')\
+#           .select('title','question','source_list','extract_start','extract_length','seq_len')
+# df_3.show()
 
 # def new_extract(extract_start, extract_length, seq_len):
 #   if extract_start <= seq_len and extract_start + extract_length <= seq_len + 1 :
