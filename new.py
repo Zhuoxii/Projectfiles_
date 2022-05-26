@@ -170,30 +170,30 @@ df_3 = df_3.withColumn('cusum_lag_extract_length', f.sum(f.col('lag_extract_leng
           .withColumn('extract_start', f.col('cusum_lag_extract_length')+1)\
           .drop('lag_extract_length', 'cusum_lag_extract_length')\
           .select('title','question','source_list','extract_start','extract_length','seq_len')
-#df_3.show()
+df_3.show()
 
-def new_extract(extract_start, extract_length, seq_len):
-  if extract_start <= seq_len and extract_start + extract_length <= seq_len + 1 :
-    extract_start2 = extract_start
-    extract_length2 = extract_length
+# def new_extract(extract_start, extract_length, seq_len):
+#   if extract_start <= seq_len and extract_start + extract_length <= seq_len + 1 :
+#     extract_start2 = extract_start
+#     extract_length2 = extract_length
   
-  elif extract_start <= seq_len and extract_start + extract_length > seq_len + 1:
-    extract_start2 = extract_start
-    extract_length2 = seq_len - extract_start + 1
+#   elif extract_start <= seq_len and extract_start + extract_length > seq_len + 1:
+#     extract_start2 = extract_start
+#     extract_length2 = seq_len - extract_start + 1
 
-  elif extract_start > seq_len and extract_length <= seq_len:
-    extract_start2 = 1
-    extract_length2 = extract_length
+#   elif extract_start > seq_len and extract_length <= seq_len:
+#     extract_start2 = 1
+#     extract_length2 = extract_length
   
-  else:
-    extract_start2 = 1
-    extract_length2 = seq_len
-  return [extract_start2, extract_length2]
+#   else:
+#     extract_start2 = 1
+#     extract_length2 = seq_len
+#   return [extract_start2, extract_length2]
 
-udf4 = udf(new_extract, ArrayType(IntegerType()))  
-df_4 = df_3.withColumn('extract_start',udf4(f.col('extract_start'), f.col('extract_length'),f.col('seq_len'))[0])\
-           .withColumn('extract_length',udf4(f.col('extract_start'), f.col('extract_length'),f.col('seq_len'))[1])
-df_4.show()
+# udf4 = udf(new_extract, ArrayType(IntegerType()))  
+# df_4 = df_3.withColumn('extract_start',udf4(f.col('extract_start'), f.col('extract_length'),f.col('seq_len'))[0])\
+#            .withColumn('extract_length',udf4(f.col('extract_start'), f.col('extract_length'),f.col('seq_len'))[1])
+# df_4.show()
 
 # impossible_negative = df_4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))
 # # impossible_negative = impossible_negative.filter(f.size('extract_source') >= 1)
