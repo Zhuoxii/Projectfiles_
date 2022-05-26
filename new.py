@@ -47,9 +47,9 @@ df_para = df.select(explode("data.paragraphs").alias("data")).withColumn("index"
 
 df = df_title.join(df_para,df_title.index==df_para.index).drop("index")
 
-df = df.head(50)
-df = spark.createDataFrame(df)
-df.show()
+# df = df.head(50)
+# df = spark.createDataFrame(df)
+# df.show()
 
 df = df.select('title','data',explode("data.context").alias("context"))\
       .select('title','data', 'context', explode("data.qas").alias("qas"))\
