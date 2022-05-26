@@ -130,7 +130,7 @@ def positive_answer_index(record):
 
 
 def negative_answer_index(record):
-    record = [record[0], record[1], record[2], record[5]]
+    record = [record[0], record[1], record[2],0,0, record[5]]
     return record
 
 rdd_answer = df_answer.rdd.map(list)
