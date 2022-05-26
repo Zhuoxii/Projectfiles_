@@ -136,14 +136,15 @@ rdd_answer = df_answer.rdd.map(list)
 rdd_type = rdd_answer.map(is_positive)
 rdd_positive = rdd_type.filter(lambda x: x[6] == 'positive').map(positive_answer_index)
 rdd_possible_negative = rdd_type.filter(lambda x: x[6] == 'possible negative') .map(negative_answer_index)
-
-schema1 =  ['title', 'source', 'question', 'answer_start','answer_end','type']
-df_positive = rdd_positive.toDF(schema1).cache()
-#df_positive  = spark.createDataFrame(rdd_positive,['context', 'source', 'question','text', 'answer_start','answer_end','type'])
-schema2 = ['title', 'source', 'question', 'answer_start','answer_end','type']
-df_possible_negative = rdd_possible_negative.toDF(schema2).cache()
-df_possible_negative.show()
-df_positive.show()
+rdd_positive.take(5)
+rdd_possible_negative.take(5)
+# schema1 =  ['title', 'source', 'question', 'answer_start','answer_end','type']
+# df_positive = rdd_positive.toDF(schema1).cache()
+# #df_positive  = spark.createDataFrame(rdd_positive,['context', 'source', 'question','text', 'answer_start','answer_end','type'])
+# schema2 = ['title', 'source', 'question', 'answer_start','answer_end','type']
+# df_possible_negative = rdd_possible_negative.toDF(schema2).cache()
+# df_possible_negative.show()
+# df_positive.show()
 """# Balance negative and positive samples"""
 
 #对于每个contract每个question有多少sample
