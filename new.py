@@ -154,14 +154,13 @@ df_possible_negative.show()
 """
 
 # # df_positive 去重
-# df_positive_distinct = df_positive.select('source').distinct()
-
-# df2_possible_negative = df_possible_negative.join(df_positive_distinct, ['source'], 'leftanti').select('context','source','question','answer_start','answer_end','type')
-
+ df_positive_distinct = df_positive.select('source').distinct()
+ df2_possible_negative = df_possible_negative.join(df_positive_distinct, ['source'], 'leftanti').select('context','source','question','answer_start','answer_end','type')
+ 
 # """## 去掉impossible negative和positive重复的部分"""
 
-# df2_impossible_negative = df_impossible_negative.join(df_positive_distinct, ['source'], 'leftanti').select('context','source','question','answer_start','answer_end','type')
-# # df2_impossible_negative.show()
+df2_impossible_negative = df_impossible_negative.join(df_positive_distinct, ['source'], 'leftanti').select('context','source','question','answer_start','answer_end','type')
+df2_impossible_negative.show()
 
 # """## 平衡 impossible negative and positive
 
@@ -198,7 +197,7 @@ df_possible_negative.show()
 #           .drop('lag_extract_length', 'cusum_lag_extract_length')\
 #           .select('context','question','source_list','extract_start','extract_length','seq_len')
 
-df_3.show()
+# df_3.show()
 # def new_extract(extract_start, extract_length, seq_len):
 #   if extract_start <= seq_len and extract_start + extract_length <= seq_len + 1:
 #     extract_start2 = extract_start
