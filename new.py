@@ -138,17 +138,6 @@ rdd_type = rdd_answer.map(is_positive)
 rdd_positive = rdd_type.filter(lambda x: x[5] == 'positive').map(positive_answer_index)
 rdd_possible_negative = rdd_type.filter(lambda x: x[5] == 'possible negative') .map(negative_answer_index)
 
-# rdd_positive.take(5)
-# #'context', 'source', 'question','text', 'answer_start', 'answer_end', 'type'
-
-# #对于impossible negative每个question需要的数量
-# rdd_positive.groupBy(lambda x: x[2]).take(5)
-
-# rdd_possible_negative.take(5)
-# #'context', 'source', 'question','answer_start', 'answer_end', 'type'
-
-rdd_impossible_negative = df_impossible_negative.rdd.map(list).map(lambda x: [x[0],x[1],x[2]])
-rdd_impossible_negative.take(5)
 
 schema1 =  ['context', 'source', 'question','text', 'answer_start','answer_end','type']
 df_positive = rdd_positive.toDF(schema1)
