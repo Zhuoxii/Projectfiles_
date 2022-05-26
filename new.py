@@ -145,57 +145,58 @@ df_positive = rdd_positive.toDF(schema1)
 schema2 = ['context', 'source', 'question', 'answer_start','answer_end','type']
 df_possible_negative = rdd_possible_negative.toDF(schema2)
 
-# df_positive.show()
+df_positive.show()
+df_possible_negative.show()
 
 """# Balance negative and positive samples
 
 ##  去掉possible negative和positive重复的部分
 """
 
-# df_positive 去重
-df_positive_distinct = df_positive.select('source').distinct()
+# # df_positive 去重
+# df_positive_distinct = df_positive.select('source').distinct()
 
-df2_possible_negative = df_possible_negative.join(df_positive_distinct, ['source'], 'leftanti').select('context','source','question','answer_start','answer_end','type')
+# df2_possible_negative = df_possible_negative.join(df_positive_distinct, ['source'], 'leftanti').select('context','source','question','answer_start','answer_end','type')
 
-"""## 去掉impossible negative和positive重复的部分"""
+# """## 去掉impossible negative和positive重复的部分"""
 
-df2_impossible_negative = df_impossible_negative.join(df_positive_distinct, ['source'], 'leftanti').select('context','source','question','answer_start','answer_end','type')
-# df2_impossible_negative.show()
+# df2_impossible_negative = df_impossible_negative.join(df_positive_distinct, ['source'], 'leftanti').select('context','source','question','answer_start','answer_end','type')
+# # df2_impossible_negative.show()
 
-"""## 平衡 impossible negative and positive
+# """## 平衡 impossible negative and positive
 
-For an impossible question in a contract, the number of impossible negative samples to keep equals the average number of positive samples of that question in other contracts that have at least one positive sample for the same question
+# For an impossible question in a contract, the number of impossible negative samples to keep equals the average number of positive samples of that question in other contracts that have at least one positive sample for the same question
 
-- 分子: 单个contract单个问题的positive samples的数量  -- groupby contract and question 计算每个contract的每个question的positive samples的数量
-- 分母: 单个问题的contract总数 - 1 --groupby question 计算每个question的contract数量再减1
-- 思路是: 分子和分母都通过join方式到impossible negative生成新的两列 --
-"""
+# - 分子: 单个contract单个问题的positive samples的数量  -- groupby contract and question 计算每个contract的每个question的positive samples的数量
+# - 分母: 单个问题的contract总数 - 1 --groupby question 计算每个question的contract数量再减1
+# - 思路是: 分子和分母都通过join方式到impossible negative生成新的两列 --
+# """
 
-#对于每个contract每个question有多少sample
-##对于positive而言
-# df_1 = df_positive.groupBy('question').count().withColumnRenamed('count', 'extract_length')
-# df_1.show()
+# #对于每个contract每个question有多少sample
+# ##对于positive而言
+# # df_1 = df_positive.groupBy('question').count().withColumnRenamed('count', 'extract_length')
+# # df_1.show()
 
-df_1 = df_positive.groupBy('question').count().withColumnRenamed('count','question_count')
-df_3 = df_positive.groupBy('question').agg(f.countDistinct('context')).withColumnRenamed('count(context)','other_contract_count')
-df_4 = df_1.join(df_3, 'question','inner')
-df_1 = df_4.withColumn('extract_length',f.round(f.col('question_count')/f.col('other_contract_count'),0).astype('int'))
+# df_1 = df_positive.groupBy('question').count().withColumnRenamed('count','question_count')
+# df_3 = df_positive.groupBy('question').agg(f.countDistinct('context')).withColumnRenamed('count(context)','other_contract_count')
+# df_4 = df_1.join(df_3, 'question','inner')
+# df_1 = df_4.withColumn('extract_length',f.round(f.col('question_count')/f.col('other_contract_count'),0).astype('int'))
 
-## 把postive的question和impossible negative的question join
-df_2 =  df_1.join(df_impossible_negative, 'question', 'inner').orderBy( 'context','question','source')\
-          .select('context', 'question','source', 'answer_start', 'answer_end','extract_length','type')
+# ## 把postive的question和impossible negative的question join
+# df_2 =  df_1.join(df_impossible_negative, 'question', 'inner').orderBy( 'context','question','source')\
+#           .select('context', 'question','source', 'answer_start', 'answer_end','extract_length','type')
 
 
 
-window1 = Window.partitionBy("context").orderBy('context','question')
-df_3 = df_2.groupBy('context','question','extract_length').agg(f.collect_set('source').alias('source_list')).orderBy('context','question')
-df_3 = df_3.withColumn('seq_len', f.size('source_list'))\
-          .withColumn('lag_extract_length', f.lag(f.col('extract_length')).over(window1))\
-          .fillna(0)
-df_3 = df_3.withColumn('cusum_lag_extract_length', f.sum(f.col('lag_extract_length')).over(window1))\
-          .withColumn('extract_start', f.col('cusum_lag_extract_length')+1)\
-          .drop('lag_extract_length', 'cusum_lag_extract_length')\
-          .select('context','question','source_list','extract_start','extract_length','seq_len')
+# window1 = Window.partitionBy("context").orderBy('context','question')
+# df_3 = df_2.groupBy('context','question','extract_length').agg(f.collect_set('source').alias('source_list')).orderBy('context','question')
+# df_3 = df_3.withColumn('seq_len', f.size('source_list'))\
+#           .withColumn('lag_extract_length', f.lag(f.col('extract_length')).over(window1))\
+#           .fillna(0)
+# df_3 = df_3.withColumn('cusum_lag_extract_length', f.sum(f.col('lag_extract_length')).over(window1))\
+#           .withColumn('extract_start', f.col('cusum_lag_extract_length')+1)\
+#           .drop('lag_extract_length', 'cusum_lag_extract_length')\
+#           .select('context','question','source_list','extract_start','extract_length','seq_len')
 
 df_3.show()
 # def new_extract(extract_start, extract_length, seq_len):
