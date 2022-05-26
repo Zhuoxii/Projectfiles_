@@ -201,7 +201,7 @@ impossible_negative =  impossible_negative.withColumn('source', explode(f.col('e
                                   .withColumn('answer_start', lit(0))\
                                   .withColumn('answer_end', lit(0))\
                                   .select('source', 'question', 'answer_start', 'answer_end')
-impossible_negative.show()
+# impossible_negative.show()
 
 """## 平衡 possible negative and postive"""
 
@@ -225,7 +225,7 @@ possible_negative = possible_negative.withColumn('source', explode('extract_sour
                                   .withColumn('answer_start', lit(0))\
                                   .withColumn('answer_end', lit(0))\
                                   .select('source', 'question', 'answer_start', 'answer_end')
-possible_negative.show()
+# possible_negative.show()
 
 print("successfully!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
