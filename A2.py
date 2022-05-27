@@ -192,7 +192,7 @@ impossible_negative = df_4.withColumn('extract_source', udf2(f.col("source_list"
 impossible_negative =  impossible_negative.withColumn('source', explode(f.col('extract_source')))\
                                   .withColumn('answer_start', lit(0))\
                                   .withColumn('answer_end', lit(0))\
-                                  .select('source', 'question', 'answer_start', 'answer_end')
+                                  .select('source', 'question', 'answer_start', 'answer_end').cache()
 impossible_negative.show()
 print("Impossible_negative samples generating!!!!!!!!!!!!!!! ")
 
@@ -214,7 +214,7 @@ possible_negative = df4.withColumn('extract_source', udf2(f.col("source_list"), 
 possible_negative =  possible_negative.withColumn('source', explode(f.col('extract_source')))\
                                   .withColumn('answer_start', lit(0))\
                                   .withColumn('answer_end', lit(0))\
-                                  .select('source', 'question', 'answer_start', 'answer_end')
+                                  .select('source', 'question', 'answer_start', 'answer_end').cache()
 
 possible_negative.show()
 print("Possible_negative samples generating!!!!!!!!!!!!!!! ")
