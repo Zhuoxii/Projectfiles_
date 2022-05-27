@@ -174,7 +174,7 @@ impossible_negative.show()
 
 # impossible_negative.show()
 
-"""## 平衡 possible negative and postive"""
+"""## Balance possible negative and postive"""
 
 df1 = df_positive.groupBy('title', 'question').count().withColumnRenamed('count','extract_length')
 
