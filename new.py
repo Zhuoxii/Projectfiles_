@@ -217,9 +217,23 @@ df_3 = df_3.withColumn('seq_len', f.size('source_list'))
 df_4 = df_3.withColumn('extract_length2',f.when(df_3.extract_length <=  df_3.seq_len ,df_3.extract_length).otherwise(df_3.seq_len))\
           .drop('extract_length')
 
-# df_4.show()
+df_4.show()
 
-impossible_negative = df_4.withColumn('extract_source', f.slice("source_list",start= lit(1), length=f.col('extract_length2')))
+import random
+
+def extract(source_list, n):
+  ls = list(source_list)
+  # ls2 = random.shuffle(ls)
+  res = ls[:n]
+  return res
+
+
+udf2 = udf(extract, ArrayType(StringType()))
+impossible_negative = df_4.withColumn('extract_source', udf2(f.col("source_list"), f.col('extract_length2')))
+
+impossible_negative.show()
+
+# impossible_negative = df_4.withColumn('extract_source', f.slice("source_list",start= lit(1), length=f.col('extract_length2')))
 impossible_negative =  impossible_negative.withColumn('source', explode(f.col('extract_source')))\
                                   .withColumn('answer_start', lit(0))\
                                   .withColumn('answer_end', lit(0))\
@@ -272,7 +286,9 @@ df3 = df2.groupBy('title','question','extract_length').agg(f.collect_set('source
 df4 = df3.withColumn('extract_length2',f.when(df3.extract_length <=  df3.seq_len ,df3.extract_length).otherwise(df3.seq_len))\
           .drop('extract_length')
 
-possible_negative = df4.withColumn('extract_source', f.slice("source_list",start= lit(1), length=f.col('extract_length2')))
+possible_negative = df4.withColumn('extract_source', udf2(f.col("source_list"), f.col('extract_length2')))
+
+# possible_negative = df4.withColumn('extract_source', f.slice("source_list",start= lit(1), length=f.col('extract_length2')))
 possible_negative =  possible_negative.withColumn('source', explode(f.col('extract_source')))\
                                   .withColumn('answer_start', lit(0))\
                                   .withColumn('answer_end', lit(0))\
@@ -302,12 +318,9 @@ df_all = positive.union(impossible_negative).union(possible_negative).cache()
 
 import json
 result = df_all.toJSON().collect()
-output = json.dumps(result)
+output = json.dumps(result, indent = 2)
 with open('result.json','w') as f:
   json.dump(output, f)
-
-
-
 
 
 spark.stop()
