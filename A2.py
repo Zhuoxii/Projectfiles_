@@ -191,8 +191,8 @@ impossible_negative =  impossible_negative.withColumn('source', explode(f.col('e
                                   .withColumn('answer_start', lit(0))\
                                   .withColumn('answer_end', lit(0))\
                                   .select('source', 'question', 'answer_start', 'answer_end').cache()
-impossible_negative.show()
-print("Impossible_negative samples generating!!!!!!!!!!!!!!! ")
+# impossible_negative.show()
+# print("Impossible_negative samples generating!!!!!!!!!!!!!!! ")
 
 """## Balance possible negative and postive"""
 
