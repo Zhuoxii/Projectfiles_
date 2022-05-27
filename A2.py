@@ -15,7 +15,7 @@ import argparse
 from pyspark.sql import SparkSession
 spark = SparkSession \
     .builder \
-    .appName("Comp5349 Assignment2") \
+    .appName("Comp5349 Assignment2_zkua9391) \
     .getOrCreate()
 
 
