@@ -173,7 +173,6 @@ df_2 =  df_1.join(df_impossible_negative, 'question', 'inner').orderBy('title','
 
 # df_2.show()
 
-window1 = Window.partitionBy("title").orderBy('title','question')
 df_3 = df_2.groupBy('title','question','extract_length').agg(f.collect_set('source').alias('source_list')).orderBy('title','question')
 df_3 = df_3.withColumn('seq_len', f.size('source_list'))
 
@@ -186,7 +185,6 @@ def extract(source_list, n):
   # ls2 = random.shuffle(ls)
   res = ls[:n]
   return res
-
 
 udf2 = udf(extract, ArrayType(StringType()))
 impossible_negative = df_4.withColumn('extract_source', udf2(f.col("source_list"), f.col('extract_length2')))
