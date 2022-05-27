@@ -53,7 +53,7 @@ print("Initial DF generating!!!!!!!!!")
 print("Maybe taking 3 minutes to run all code o(╥﹏╥)o")
 
 
-
+### function for generating sequnece for a contract
 def segmentToSequence(data):
   ls = []
   ix = []
