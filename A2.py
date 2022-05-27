@@ -144,9 +144,9 @@ def negative_answer_index(record):
 ####################### generate positive and possible negative samples   ####################
 
 rdd_answer = df_answer.rdd.map(list)
-rdd_type = rdd_answer.map(is_positive)
-rdd_positive = rdd_type.filter(lambda x: x[6] == 'positive').map(positive_answer_index)
-rdd_possible_negative = rdd_type.filter(lambda x: x[6] == 'possible negative').map(negative_answer_index)
+rdd_type = rdd_answer.map(is_positive).cache()
+rdd_positive = rdd_type.filter(lambda x: x[6] == 'positive').map(positive_answer_index).cache()
+rdd_possible_negative = rdd_type.filter(lambda x: x[6] == 'possible negative').map(negative_answer_index).cache()
 
 
 schema1 =  ['title', 'source', 'question', 'answer_start','answer_end','type']
