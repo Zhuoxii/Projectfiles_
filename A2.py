@@ -16,10 +16,7 @@ from pyspark.sql import SparkSession
 spark = SparkSession \
     .builder \
     .appName("Comp5349 Assignment2") \
-    .config("spark.driver.maxResultSize", "2048M") \
-    .config("spark.executor.cores", "4") \
     .getOrCreate()
-
 
 
 
@@ -29,7 +26,6 @@ parser.add_argument("--output", help="the output path",
                         default='a2_out')
 args = parser.parse_args()
 output_path = args.output
-
 
 
 
