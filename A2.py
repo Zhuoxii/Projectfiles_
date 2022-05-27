@@ -237,7 +237,7 @@ result = df_all.toJSON().collect()
 output = json.dumps(result, indent = 2)
 with open('result.json','w') as f:
   json.dump(output, f)
-
+print("Finished all!!!!!!!!The final json file is in the same directory with .py and .sh script")
 
 spark.stop()
 
