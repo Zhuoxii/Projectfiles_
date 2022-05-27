@@ -37,7 +37,7 @@ output_path = args.output
     # s3://comp5349-2022/test.json
     # s3://comp5349-2022/train_separate_questions.json
     # s3://comp5349-2022/CUADv1.json
-data = "s3://comp5349-2022/CUADv1.json"
+data = "s3://comp5349-2022/train_separate_questions.json"
 df= spark.read.option('multiline', 'true').json(data)
 
 df_title = df.select(explode("data.title").alias("title")).withColumn("index",f.monotonically_increasing_id())
