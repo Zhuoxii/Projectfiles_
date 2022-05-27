@@ -82,51 +82,113 @@ df_impossible_negative = df_no_answer.withColumn('list_context',udf1(df_no_answe
 
 # df_impossible_negative.show()
 
+# df_answer = df.filter(df.is_impossible == False )\
+#              .withColumn('answers2', explode('answers').alias('answers2'))\
+#              .select('title','context','question','answers2.text', 'answers2.answer_start',"is_impossible")
+# df_answer = df_answer.withColumn('list_context',udf1('context'))\
+#            .withColumn("source",f.explode('list_context')).select('title','context', 'source', 'question','text', 'answer_start', 'is_impossible').cache()
+# # df_answer.show()
+
+# def answer_start(source,text):
+#   index = source.find(text)
+#   if index == -1:
+#     return 0
+#   else:
+#     return index
+
+# def answer_end(source,text):
+#   index = source.find(text)
+#   length = len(text)
+#   if index == -1:
+#     return 0
+#   else:
+#     return index+length
+
+# def Type(AnswerStart,AnswerEnd,is_impossible):
+#   if is_impossible: # impossible negative
+#     return 0
+#   elif not is_impossible and AnswerStart==0 and AnswerEnd==0: # possible negative
+#     return 1
+#   else: # positive
+#     return 2
+
+
+# udf1 = udf(answer_start,LongType())
+# udf2 = udf(answer_end,LongType())
+# udf3 = udf(Type,LongType())
+
+# df_possible = df_answer.withColumn('answer_start',udf1(df_answer.source,df_answer.text))\
+#     .withColumn('answer_end',udf2(df_answer.source,df_answer.text))\
+#     .withColumn('type',udf3('answer_end','answer_start',df_answer.is_impossible))\
+#     .select("title","source","question","answer_start","answer_end","type")
+
+# df_possible.show()
+
+# df_possible_negative = df_possible.filter(df_possible.type == 1).cache()
+# df_positive = df_possible.filter(df_possible.type == 2).cache()
+
+
+
 df_answer = df.filter(df.is_impossible == False )\
-             .withColumn('answers2', explode('answers').alias('answers2'))\
-             .select('title','context','question','answers2.text', 'answers2.answer_start',"is_impossible")
+              .withColumn('answers2', explode('answers').alias('answers2'))\
+              .select('title','context','question','answers2.text', 'answers2.answer_start')
 df_answer = df_answer.withColumn('list_context',udf1('context'))\
-           .withColumn("source",f.explode('list_context')).select('title','context', 'source', 'question','text', 'answer_start', 'is_impossible').cache()
-# df_answer.show()
+           .withColumn("source",f.explode('list_context')).select('title','context', 'source', 'question','text', 'answer_start').cache()
 
-def answer_start(source,text):
-  index = source.find(text)
-  if index == -1:
-    return 0
+
+def is_positive(record):
+  context = record[1]
+  source = record[2]
+  text = record[4]
+  answer_start = record[5]
+
+  source_start = context.index(source)
+  source_end = source_start + len(source) 
+
+  answer_end = answer_start + len(text)
+  if answer_start <= source_start and answer_end >= source_start:
+    return  record + ["positive"]
+  elif answer_start >= source_start and answer_start <= source_end:
+    return  record + ["positive"]
   else:
-    return index
-
-def answer_end(source,text):
-  index = source.find(text)
-  length = len(text)
-  if index == -1:
-    return 0
-  else:
-    return index+length
-
-def Type(AnswerStart,AnswerEnd,is_impossible):
-  if is_impossible: # impossible negative
-    return 0
-  elif not is_impossible and AnswerStart==0 and AnswerEnd==0: # possible negative
-    return 1
-  else: # positive
-    return 2
+    return  record + ["possible negative"]
 
 
-udf1 = udf(answer_start,LongType())
-udf2 = udf(answer_end,LongType())
-udf3 = udf(Type,LongType())
 
-df_possible = df_answer.withColumn('answer_start',udf1(df_answer.source,df_answer.text))\
-    .withColumn('answer_end',udf2(df_answer.source,df_answer.text))\
-    .withColumn('type',udf3('answer_end','answer_start',df_answer.is_impossible))\
-    .select("title","source","question","answer_start","answer_end","type")
+def positive_answer_index(record):
+    context = record[1]
+    source = record[2]
+    text = record[4]
+    answer_start = record[5]
+    source_start = context.index(source)
+    source_end = source_start + len(source)
+    answer_end = answer_start + len(text)
 
-df_possible.show()
+    if answer_start < source_start and answer_end < source_end:
+      return    [record[0], record[2], record[3], 0, len(text), record[6]]
+    elif answer_start < source_start and answer_end > source_end:
+      return  record + [0,len(source)]
+    elif answer_start > source_start and answer_end < source_end:
+      return  [record[0],  record[2], record[3], source.index(text), source.index(text) + len(text),record[6]]
+    else:
+      new_text = context[answer_start: source_end]
+      return  [record[0], record[2], record[3], source.index(new_text), len(source),record[6]]
 
-df_possible_negative = df_possible.filter(df_possible.type == 1).cache()
-df_positive = df_possible.filter(df_possible.type == 2).cache()
 
+def negative_answer_index(record):
+    record = [record[0], record[2], record[3], 0, 0, record[6]]
+    return record
+
+rdd_answer = df_answer.rdd.map(list)
+rdd_type = rdd_answer.map(is_positive)
+rdd_positive = rdd_type.filter(lambda x: x[6] == 'positive').map(positive_answer_index).cache()
+rdd_possible_negative = rdd_type.filter(lambda x: x[6] == 'possible negative').map(negative_answer_index).cache()
+
+
+schema1 =  ['title', 'source', 'question', 'answer_start','answer_end','type']
+df_positive = rdd_positive.toDF(schema1).cache()
+schema2 = ['title', 'source', 'question', 'answer_start','answer_end','type']
+df_possible_negative = rdd_possible_negative.toDF(schema2).cache()
 
 """# Balance negative and positive samples"""
 
