@@ -89,14 +89,14 @@ df_answer = df_answer.withColumn('list_context',udf1('context'))\
            .withColumn("source",f.explode('list_context')).select('title','context', 'source', 'question','text', 'answer_start', 'is_impossible').cache()
 # df_answer.show()
 
-def getAnswerStart(source,text):
+def answer_start(source,text):
   index = source.find(text)
   if index == -1:
     return 0
   else:
     return index
 
-def getAnswerEnd(source,text):
+def answer_end(source,text):
   index = source.find(text)
   length = len(text)
   if index == -1:
@@ -104,7 +104,7 @@ def getAnswerEnd(source,text):
   else:
     return index+length
 
-def setType(AnswerStart,AnswerEnd,is_impossible):
+def Type(AnswerStart,AnswerEnd,is_impossible):
   if is_impossible: # impossible negative
     return 0
   elif not is_impossible and AnswerStart==0 and AnswerEnd==0: # possible negative
@@ -112,13 +112,14 @@ def setType(AnswerStart,AnswerEnd,is_impossible):
   else: # positive
     return 2
 
-udf_answerStart = udf(getAnswerStart,LongType())
-udf_answerEnd = udf(getAnswerEnd,LongType())
-udf_type = udf(setType,LongType())
 
-df_possible = df_answer.withColumn('answer_start',udf_answerStart(df_answer.source,df_answer.text))\
-    .withColumn('answer_end',udf_answerEnd(df_answer.source,df_answer.text))\
-    .withColumn('type',udf_type('answer_end','answer_start',df_answer.is_impossible))\
+udf1 = udf(answer_start,LongType())
+udf2 = udf(answer_end,LongType())
+udf3 = udf(Type,LongType())
+
+df_possible = df_answer.withColumn('answer_start',udf1(df_answer.source,df_answer.text))\
+    .withColumn('answer_end',udf2(df_answer.source,df_answer.text))\
+    .withColumn('type',udf3('answer_end','answer_start',df_answer.is_impossible))\
     .select("title","source","question","answer_start","answer_end","type")
 
 df_possible.show()
@@ -126,64 +127,6 @@ df_possible.show()
 df_possible_negative = df_possible.filter(df_possible.type == 1).cache()
 df_positive = df_possible.filter(df_possible.type == 2).cache()
 
-# df_positive.count()
-
-# df_possible_negative.show()
-
-# df_positive.show()
-
-# def is_positive(record):
-#   context = record[1]
-#   source = record[2]
-#   text = record[4]
-#   answer_start = record[5]
-
-#   source_start = context.index(source)
-#   source_end = source_start + len(source) 
-
-#   answer_end = answer_start + len(text)
-#   if answer_start <= source_start and answer_end >= source_start:
-#     return  record + ["positive"]
-#   elif answer_start >= source_start and answer_start <= source_end:
-#     return  record + ["positive"]
-#   else:
-#     return  record + ["possible negative"]
-
-
-
-# def positive_answer_index(record):
-#     context = record[1]
-#     source = record[2]
-#     text = record[4]
-#     answer_start = record[5]
-#     source_start = context.index(source)
-#     source_end = source_start + len(source)
-#     answer_end = answer_start + len(text)
-
-#     if answer_start < source_start and answer_end < source_end:
-#       return    [record[0], record[2], record[3], 0, len(text), record[6]]
-#     elif answer_start < source_start and answer_end > source_end:
-#       return  record + [0,len(source)]
-#     elif answer_start > source_start and answer_end < source_end:
-#       return  [record[0],  record[2], record[3], source.index(text), source.index(text) + len(text),record[6]]
-#     else:
-#       new_text = context[answer_start: source_end]
-#       return  [record[0], record[2], record[3], source.index(new_text), len(source),record[6]]
-
-
-# def negative_answer_index(record):
-#     record = [record[0], record[2], record[3], 0, 0, record[6]]
-#     return record
-
-# rdd_answer = df_answer.rdd.map(list)
-# rdd_type = rdd_answer.map(is_positive)
-# rdd_positive = rdd_type.filter(lambda x: x[6] == 'positive').map(positive_answer_index).cache()
-# rdd_possible_negative = rdd_type.filter(lambda x: x[6] == 'possible negative') .map(negative_answer_index).cache()
-
-# schema1 =  ['title', 'source', 'question', 'answer_start','answer_end','type']
-# df_positive = rdd_positive.toDF(schema1).cache()
-# schema2 = ['title', 'source', 'question', 'answer_start','answer_end','type']
-# df_possible_negative = rdd_possible_negative.toDF(schema2).cache()
 
 """# Balance negative and positive samples"""
 
@@ -206,18 +149,9 @@ df_2 =  df_1.join(df_impossible_negative, 'question', 'inner').orderBy('title','
 window1 = Window.partitionBy("title").orderBy('title','question')
 df_3 = df_2.groupBy('title','question','extract_length').agg(f.collect_set('source').alias('source_list')).orderBy('title','question')
 df_3 = df_3.withColumn('seq_len', f.size('source_list'))
-#            .withColumn('lag_extract_length', f.lag(f.col('extract_length')).over(window1))\
-#            .fillna(0)
-# df_3 = df_3.withColumn('cusum_lag_extract_length', f.sum(f.col('lag_extract_length')).over(window1))\
-#           .withColumn('extract_start', f.col('cusum_lag_extract_length')+1)\
-#           .drop('lag_extract_length', 'cusum_lag_extract_length')\
-#           .select('title','question','source_list','extract_start','extract_length','seq_len')
-# df_3.show()
 
 df_4 = df_3.withColumn('extract_length2',f.when(df_3.extract_length <=  df_3.seq_len ,df_3.extract_length).otherwise(df_3.seq_len))\
           .drop('extract_length')
-
-df_4.show()
 
 import random
 
@@ -231,42 +165,13 @@ def extract(source_list, n):
 udf2 = udf(extract, ArrayType(StringType()))
 impossible_negative = df_4.withColumn('extract_source', udf2(f.col("source_list"), f.col('extract_length2')))
 
-impossible_negative.show()
-
-# impossible_negative = df_4.withColumn('extract_source', f.slice("source_list",start= lit(1), length=f.col('extract_length2')))
 impossible_negative =  impossible_negative.withColumn('source', explode(f.col('extract_source')))\
                                   .withColumn('answer_start', lit(0))\
                                   .withColumn('answer_end', lit(0))\
                                   .select('source', 'question', 'answer_start', 'answer_end')
 impossible_negative.show()
 
-# def new_extract(extract_start, extract_length, seq_len):
-#   if extract_start <= seq_len and extract_start + extract_length <= seq_len + 1 :
-#     extract_start2 = extract_start
-#     extract_length2 = extract_length
-  
-#   elif extract_start <= seq_len and extract_start + extract_length > seq_len + 1:
-#     extract_start2 = extract_start
-#     extract_length2 = seq_len - extract_start + 1
 
-#   elif extract_start > seq_len and extract_length <= seq_len:
-#     extract_start2 = 1
-#     extract_length2 = extract_length
-  
-#   else:
-#     extract_start2 = 1
-#     extract_length2 = seq_len
-#   return [extract_start2, extract_length2]
-
-# udf4 = udf(new_extract, ArrayType(IntegerType()))
-# df_4 = df_3.withColumn('extract_start',udf4( f.col('extract_start'),f.col('extract_length'),f.col('seq_len'))[0])\
-#            .withColumn('extract_length',udf4(f.col('extract_start'), f.col('extract_length'),f.col('seq_len'))[1])
-
-# impossible_negative = df_4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))
-# impossible_negative =  impossible_negative.withColumn('source', explode(f.col('extract_source')))\
-#                                   .withColumn('answer_start', lit(0))\
-#                                   .withColumn('answer_end', lit(0))\
-#                                   .select('source', 'question', 'answer_start', 'answer_end')
 # impossible_negative.show()
 
 """## 平衡 possible negative and postive"""
@@ -276,12 +181,7 @@ df1 = df_positive.groupBy('title', 'question').count().withColumnRenamed('count'
 df2 = df_possible_negative.join(df1, ['title','question'], 'inner')
 df3 = df2.groupBy('title','question','extract_length').agg(f.collect_set('source').alias('source_list')).orderBy('title','question')\
           .withColumn('seq_len', f.size('source_list'))
-          # .withColumn('lag_extract_length', f.lag(f.col('extract_length')).over(window1))\
-          # .fillna(0)\
-          # .withColumn('cusum_lag_extract_length', f.sum(f.col('lag_extract_length')).over(window1))\
-          # .withColumn('extract_start', f.col('cusum_lag_extract_length')+1)\
-          # .drop('lag_extract_length', 'cusum_lag_extract_length')\
-          # .select('title','question','source_list','extract_start','extract_length','seq_len')
+
 
 df4 = df3.withColumn('extract_length2',f.when(df3.extract_length <=  df3.seq_len ,df3.extract_length).otherwise(df3.seq_len))\
           .drop('extract_length')
@@ -295,18 +195,6 @@ possible_negative =  possible_negative.withColumn('source', explode(f.col('extra
                                   .select('source', 'question', 'answer_start', 'answer_end')
 possible_negative.show()
 
-# df4 = df3.withColumn('extract_start',udf4('extract_start', 'extract_length','seq_len')[0])\
-#            .withColumn('extract_length',udf4('extract_start', 'extract_length','seq_len')[1])
-
-# df4 = df4.filter(f.col('extract_length') >= 1)
-# df4  = df4.filter(f.col('seq_len') >=1)
-
-# possible_negative = df4.withColumn('extract_source', f.slice("source_list",start=f.col('extract_start'), length=f.col('extract_length')))
-# possible_negative = possible_negative.withColumn('source', explode('extract_source'))\
-#                                   .withColumn('answer_start', lit(0))\
-#                                   .withColumn('answer_end', lit(0))\
-#                                   .select('source', 'question', 'answer_start', 'answer_end')
-# possible_negative.show()
 
 # print("successfully!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
