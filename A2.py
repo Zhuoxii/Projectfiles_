@@ -16,6 +16,8 @@ from pyspark.sql import SparkSession
 spark = SparkSession \
     .builder \
     .appName("Comp5349 Assignment2") \
+    .config("spark.driver.maxResultSize", "2048M") \
+    .config("spark.executor.cores", "4") \
     .getOrCreate()
 
 
@@ -149,8 +151,8 @@ def negative_answer_index(record):
 
 rdd_answer = df_answer.rdd.map(list)
 rdd_type = rdd_answer.map(is_positive)
-rdd_positive = rdd_type.filter(lambda x: x[6] == 'positive').map(positive_answer_index).cache()
-rdd_possible_negative = rdd_type.filter(lambda x: x[6] == 'possible negative').map(negative_answer_index).cache()
+rdd_positive = rdd_type.filter(lambda x: x[6] == 'positive').map(positive_answer_index)
+rdd_possible_negative = rdd_type.filter(lambda x: x[6] == 'possible negative').map(negative_answer_index)
 
 
 schema1 =  ['title', 'source', 'question', 'answer_start','answer_end','type']
