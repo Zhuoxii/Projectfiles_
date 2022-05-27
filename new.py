@@ -16,10 +16,10 @@ from pyspark.sql import SparkSession
 spark = SparkSession \
     .builder \
     .appName("Comp5349 Assignment2") \
-    .config("spark.executor.memory", "4g")\
-    .config("spark.driver.memory", "6g") \
-    .config("spark.executor.cores", "4") \
-    .config("spark.Num-executors", "10") \
+    .config("spark.executor.memory", "16g")\
+    .config("spark.driver.memory", "16g") \
+    .config("spark.executor.cores", "8") \
+    .config("spark.Num-executors", "5") \
     .getOrCreate()
 
 
