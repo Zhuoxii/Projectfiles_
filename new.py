@@ -16,8 +16,6 @@ from pyspark.sql import SparkSession
 spark = SparkSession \
     .builder \
     .appName("Comp5349 Assignment2") \
-    .config("spark.executor.cores", "5") \
-    .config("spark.Num-executors", "6") \
     .getOrCreate()
 
 
