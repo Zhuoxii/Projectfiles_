@@ -216,6 +216,7 @@ possible_negative =  possible_negative.withColumn('source', explode(f.col('extra
 
 possible_negative.show()
 print("Possible_negative samples generating!!!!!!!!!!!!!!! ")
+print("probably need to wait only 10 seconds o(╥﹏╥)Sad")
 
 
 
